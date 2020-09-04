@@ -1,0 +1,153 @@
+<?php
+		session_start();
+	
+	if (!isset($_SESSION['zalogowany']))
+	{
+		header('Location: index.php');
+		exit();
+	}
+echo"
+
+<div id='maindiv'></div>
+
+<div id='left_cuts' style='background-color:".$_SESSION['kolor_tla'].";'>
+							<table class='boardF' style='word-spacing:10px;'>
+							<tr>
+								<td style='height:100px;padding:50px 0px;text-align:center;'>
+								
+										<p style='text-align:left;color:brown;text-size:18px;display:inline;word-spacing:0px;padding:10px;'>Na skróty: </p><br/><br/><br/>
+										<a href='faq.html' target='_BLANK'>FAQ</a><br/><br/>
+										<a href='faq.html' target='_BLANK'>TIPs</a><br/><br/>						
+										<a href='annou.php'>Zgłoś</a><br/><br/>								
+										<a href='regulamin.pdf' target='_BLANK'>Regulamin</a><br/><br/>
+										<a href='send_annou.php?annou=odp' title='Odpowiedź na pytanie z TIA'>o-TIA</a><br/><br/>
+										<a href='newbook.php' title='Dodaj nową książkę'>Nowa</a><br/><br/>
+										<a href='#' title='wkrótce' style='color:#b2b2b2;'><s>Czytana</s></a><br/><br/>
+								</td>
+							</tr>
+							</table>
+							</div>
+";
+		include "menu.php";
+
+		
+
+			require_once "connect.php";
+
+				$polaczenie = new mysqli($host, $db_user, $db_password, $db_name);
+	
+					if ($polaczenie->connect_errno!=0)
+						{
+							echo "Error: ".$polaczenie->connect_errno;
+						}
+					else
+						{
+						ini_set("display_errors", 0);
+
+						mysqli_query($polaczenie, "SET CHARSET utf8");
+						mysqli_query($polaczenie, "SET NAMES 'utf8' COLLATE 'utf8_polish_ci'");
+						mysqli_select_db($polaczenie, $db_name);
+            
+						$myb =" SELECT wiad_ID, wiad_OD, wiad_DO, tresc, data, stan, 
+						COUNT(*) as ilosc 
+						FROM mail 
+						WHERE wiad_DO='".$_SESSION['login']."' 
+						OR
+						wiad_OD='".$_SESSION['login']."' 
+						GROUP BY wiad_OD, stan ";
+						
+							$result = $polaczenie->query($myb);
+
+
+							echo "<div style='position:relative;left:10%;width:50%;margin-top:170px;'>
+									<h3>Konwersacje</h3>
+"; 
+														
+							if($result->num_rows >0){
+								while($row = $result->fetch_assoc())
+								{
+									if($row['wiad_OD'] === $_SESSION['login'])
+									{
+									echo "
+										<p style='display:inline;'>
+											<a href='poczta.php?kon=".$row['wiad_DO']."' style='text-decoration:none;color:black'>
+												".$row['wiad_DO']."
+											</a>
+										</p>
+											
+											";
+											
+												if($row['stan'] === "NIE")
+												{
+													echo "<p style='color:green;display:inline;font-size:24'><b> &#64 </b></p>";
+												}
+											
+											echo"
+										</p>
+									";
+									}
+									if($row['wiad_DO'] === $_SESSION['login'])
+									{
+										echo "
+										<p style=''>
+											<a href='poczta.php?kon=".$row['wiad_OD']."' style='text-decoration:none;color:black'>
+												".$row['wiad_OD']."
+											</a>
+										</p>
+									";
+									}
+								}
+							}
+							echo"	
+									<a href='nowy_list.php?wiad_OD=".$_SESSION['login']."'>
+									<p id='NEW_mail'>Napisz nowy list</p>
+									</a>
+									</div>
+									
+									";
+									
+										$konwer = " SELECT * FROM mail 
+										WHERE 
+										wiad_OD='".$_GET['kon']."' AND wiad_DO=".$_SESSION['login']."
+										OR
+										wiad_DO='".$_GET['kon']."' AND wiad_OD=".$_SESSION['login']."
+										ASC
+										";
+										$resultKON = $polaczenie->query($konwer);
+											if($resultKON->num_rows >0){
+												while($rowK = $resultKON->fetch_assoc())
+													{
+														echo"
+														<table>
+															<tr>
+																<td>
+																	".$rowK['wiad_OD']."
+																</td>
+															</tr>
+															<tr>
+																<td>
+																	".$rowK['tresc']."
+																</td>															
+															</tr>
+															<tr>
+																<td>
+																	".$rowK['data']."
+																</td>															
+															</tr>
+														</table>
+									";
+													if($rowK['stan'] === "NIE"){
+													$upSTAN =" UPDATE mail SET stan='TAK' WHERE wiad_ID='".$rowK['wiad_ID']."'";
+													mysqli_query($polaczenie, $upSTAN);
+													}
+													}
+											}
+									echo"
+									
+									
+									";
+									
+
+						}
+							
+						?>
